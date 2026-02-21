@@ -10,14 +10,19 @@ export default function Message({ message }: MessageProps) {
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+      {!isUser && (
+        <div className="w-8 h-8 bg-[#c9a87c] rounded-full flex items-center justify-center text-white text-sm mr-3 flex-shrink-0">
+          A
+        </div>
+      )}
       <div
-        className={`max-w-[70%] px-4 py-3 rounded-2xl ${
+        className={`max-w-[80%] px-4 py-3 rounded-2xl ${
           isUser
-            ? 'bg-blue-500 text-white rounded-br-md'
-            : 'bg-gray-100 text-gray-800 rounded-bl-md'
+            ? 'bg-[#c9a87c] text-white rounded-br-md'
+            : 'bg-[#f9f5f1] text-gray-800 rounded-bl-md'
         }`}
       >
-        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
         <p
           className={`text-xs mt-1 ${
             isUser ? 'text-blue-100' : 'text-gray-400'
