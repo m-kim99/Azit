@@ -8,6 +8,12 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
+// ✅ 디버깅
+console.log('🔍 환경 변수 체크:');
+console.log('SUPABASE_URL:', SUPABASE_URL ? '✅ 있음' : '❌ 없음');
+console.log('SUPABASE_KEY:', SUPABASE_KEY ? '✅ 있음' : '❌ 없음');
+console.log('ANTHROPIC_API_KEY:', ANTHROPIC_API_KEY ? '✅ 있음' : '❌ 없음');
+
 // Supabase 클라이언트 (환경 변수가 있을 때만 생성)
 const supabase = SUPABASE_URL && SUPABASE_KEY 
   ? createClient(SUPABASE_URL, SUPABASE_KEY)
