@@ -1,78 +1,63 @@
-// 디버그 엔드포인트 - Supabase 연결 테스트
+// 디버그 엔드포인트 - 단계별 테스트
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_KEY;
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-
   const results: any = {
-    env: {
-      SUPABASE_URL: SUPABASE_URL ? `${SUPABASE_URL.slice(0, 30)}...` : '❌ MISSING',
-      SUPABASE_KEY: SUPABASE_KEY ? `${SUPABASE_KEY.slice(0, 10)}...` : '❌ MISSING',
-      ANTHROPIC_API_KEY: ANTHROPIC_API_KEY ? `${ANTHROPIC_API_KEY.slice(0, 10)}...` : '❌ MISSING',
+    step1_basic: '✅ Function works',
+    step2_env: {
+      SUPABASE_URL: process.env.SUPABASE_URL ? `${process.env.SUPABASE_URL.slice(0, 30)}...` : '❌ MISSING',
+      SUPABASE_KEY: process.env.SUPABASE_KEY ? `${process.env.SUPABASE_KEY.slice(0, 15)}...` : '❌ MISSING',
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ? `${process.env.ANTHROPIC_API_KEY.slice(0, 15)}...` : '❌ MISSING',
     },
-    tests: {}
+    step3_supabase: 'testing...',
   };
 
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    results.tests.connection = '❌ Cannot test - missing env vars';
-    return res.status(200).json(results);
-  }
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  // Test 1: Read memories
+  // Step 3: Supabase import test
   try {
-    const { data, error } = await supabase.from('memories').select('*').limit(3);
-    results.tests.read_memories = error 
-      ? { status: '❌', error: error.message, code: error.code, hint: error.hint }
-      : { status: '✅', count: data?.length, sample: data };
-  } catch (e: any) {
-    results.tests.read_memories = { status: '❌ EXCEPTION', message: e.message };
-  }
+    const { createClient } = await import('@supabase/supabase-js');
+    results.step3_supabase = '✅ Import OK';
+    
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_KEY;
+    
+    if (!url || !key) {
+      results.step4_connection = '❌ Missing env vars';
+      return res.status(200).json(results);
+    }
 
-  // Test 2: Read conversations
-  try {
-    const { data, error } = await supabase.from('conversations').select('*').limit(3);
-    results.tests.read_conversations = error
-      ? { status: '❌', error: error.message, code: error.code, hint: error.hint }
-      : { status: '✅', count: data?.length, sample: data };
-  } catch (e: any) {
-    results.tests.read_conversations = { status: '❌ EXCEPTION', message: e.message };
-  }
+    const supabase = createClient(url, key);
+    results.step4_connection = '✅ Client created';
 
-  // Test 3: Insert conversation
-  try {
-    const { data, error } = await supabase
+    // Step 5: Read test
+    const { data: memData, error: memErr } = await supabase.from('memories').select('*').limit(3);
+    results.step5_read_memories = memErr 
+      ? { status: '❌', error: memErr.message, code: memErr.code, hint: memErr.hint }
+      : { status: '✅', count: memData?.length, data: memData };
+
+    // Step 6: Read conversations
+    const { data: convData, error: convErr } = await supabase.from('conversations').select('*').limit(3);
+    results.step6_read_conversations = convErr
+      ? { status: '❌', error: convErr.message, code: convErr.code, hint: convErr.hint }
+      : { status: '✅', count: convData?.length, data: convData };
+
+    // Step 7: Insert test
+    const { data: insertData, error: insertErr } = await supabase
       .from('conversations')
       .insert({ title: 'DEBUG_TEST' })
       .select('id, title, created_at')
       .single();
-    results.tests.insert_conversation = error
-      ? { status: '❌', error: error.message, code: error.code, hint: error.hint, details: error.details }
-      : { status: '✅', data };
+    results.step7_insert_conversation = insertErr
+      ? { status: '❌', error: insertErr.message, code: insertErr.code, hint: insertErr.hint, details: insertErr.details }
+      : { status: '✅', data: insertData };
 
-    // Cleanup: delete test conversation
-    if (data?.id) {
-      await supabase.from('conversations').delete().eq('id', data.id);
-      results.tests.delete_cleanup = '✅ cleaned up';
+    // Cleanup
+    if (insertData?.id) {
+      await supabase.from('conversations').delete().eq('id', insertData.id);
+      results.step8_cleanup = '✅';
     }
-  } catch (e: any) {
-    results.tests.insert_conversation = { status: '❌ EXCEPTION', message: e.message };
-  }
 
-  // Test 4: Read messages
-  try {
-    const { data, error } = await supabase.from('messages').select('*').limit(1);
-    results.tests.read_messages = error
-      ? { status: '❌', error: error.message, code: error.code, hint: error.hint }
-      : { status: '✅', count: data?.length };
   } catch (e: any) {
-    results.tests.read_messages = { status: '❌ EXCEPTION', message: e.message };
+    results.step3_supabase = { status: '❌ CRASH', message: e.message, stack: e.stack?.slice(0, 300) };
   }
 
   return res.status(200).json(results);
