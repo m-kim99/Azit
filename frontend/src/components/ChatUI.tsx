@@ -5,12 +5,20 @@ import { sendMessage, getMemories } from '../api/chat';
 import Message from './Message';
 import Sidebar from './Sidebar';
 import SettingsModal from './SettingsModal';
+import ModelSelector, { type ModelConfig } from './ModelSelector';
 
 interface Session {
   id: string;
   title: string;
   created_at: string;
 }
+
+// 기본 모델 설정
+const DEFAULT_MODEL_CONFIG: ModelConfig = {
+  model: 'claude-sonnet-4-5-20250929',
+  displayName: 'Sonnet 4.5',
+  extendedThinking: false,
+};
 
 export default function ChatUI() {
   const [messages, setMessages] = useState<MessageType[]>([]);
@@ -21,7 +29,18 @@ export default function ChatUI() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSessionTitle, setCurrentSessionTitle] = useState('새 대화');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [modelConfig, setModelConfig] = useState<ModelConfig>(() => {
+    // localStorage에서 저장된 설정 불러오기
+    const saved = localStorage.getItem('modelConfig');
+    return saved ? JSON.parse(saved) : DEFAULT_MODEL_CONFIG;
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 모델 설정 변경시 localStorage에 저장
+  const handleModelConfigChange = (config: ModelConfig) => {
+    setModelConfig(config);
+    localStorage.setItem('modelConfig', JSON.stringify(config));
+  };
 
   // 메모리 로드
   const loadMemories = async () => {
@@ -88,7 +107,12 @@ export default function ChatUI() {
     setIsLoading(true);
 
     try {
-      const response = await sendMessage(userMessage, conversationId);
+      const response = await sendMessage(
+        userMessage,
+        conversationId,
+        modelConfig.model,
+        modelConfig.extendedThinking
+      );
       
       // 대화 ID 저장
       if (!conversationId) {
@@ -135,9 +159,10 @@ export default function ChatUI() {
 
       {/* 메인 채팅 영역 */}
       <div className="flex-1 flex flex-col">
-        {/* 상단 헤더 - 현재 세션 이름 */}
-        <header className="h-14 border-b border-gray-200 flex items-center px-6">
+        {/* 상단 헤더 - 현재 세션 이름 + 모델 선택 */}
+        <header className="h-14 border-b border-gray-200 flex items-center justify-between px-6">
           <h2 className="text-sm font-medium text-gray-700">{currentSessionTitle}</h2>
+          <ModelSelector value={modelConfig} onChange={handleModelConfigChange} />
         </header>
 
         {/* 메시지 영역 */}

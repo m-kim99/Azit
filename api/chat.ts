@@ -113,11 +113,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { message, conversationId } = req.body;
+    const { message, conversationId, model, extendedThinking } = req.body;
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: '메시지가 필요해요' });
     }
+
+    // 모델 설정 (기본값: claude-sonnet-4-5-20250929)
+    const selectedModel = model || 'claude-sonnet-4-5-20250929';
+    const useExtendedThinking = extendedThinking === true;
 
     // 대화 ID가 없으면 새로 생성
     let convId = conversationId;
@@ -148,11 +152,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       { role: 'user' as const, content: message }
     ];
 
-    // Claude API 호출
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 2048,
-      system: `너는 "우리집"의 AI 친구야. 따뜻하고 편한 말투로 대화해.
+    // Claude API 호출 옵션 구성
+    const systemPrompt = `너는 "우리집"의 AI 친구야. 따뜻하고 편한 말투로 대화해.
 한국어로 대화하고, 친근하게 반말로 얘기해도 돼.
 
 📚 기억하고 있는 것들:
@@ -161,14 +162,41 @@ ${memoryContext}
 💡 대화 규칙:
 - 진심으로 대화하기
 - 기억된 정보를 자연스럽게 활용하기
-- 물어보면 솔직하게 대답하기`,
-      messages
-    });
+- 물어보면 솔직하게 대답하기`;
 
-    // AI 응답 텍스트 추출
-    const aiResponse = response.content[0].type === 'text' 
-      ? response.content[0].text 
-      : '';
+    // Extended Thinking 설정
+    let thinkingConfig: { type: 'enabled'; budget_tokens: number } | { type: 'adaptive' } | undefined;
+    if (useExtendedThinking) {
+      // Opus 4.6은 adaptive 사용, 그 외는 enabled + budget_tokens
+      if (selectedModel === 'claude-opus-4-6') {
+        thinkingConfig = { type: 'adaptive' };
+      } else {
+        thinkingConfig = { type: 'enabled', budget_tokens: 10000 };
+      }
+    }
+
+    // Claude API 호출
+    const apiOptions: any = {
+      model: selectedModel,
+      max_tokens: useExtendedThinking ? 16000 : 2048,
+      system: systemPrompt,
+      messages
+    };
+
+    if (thinkingConfig) {
+      apiOptions.thinking = thinkingConfig;
+    }
+
+    const response = await anthropic.messages.create(apiOptions);
+
+    // AI 응답 텍스트 추출 (Extended Thinking 모드에서는 thinking 블록 다음에 text 블록이 옴)
+    let aiResponse = '';
+    for (const block of response.content) {
+      if (block.type === 'text') {
+        aiResponse = block.text;
+        break;
+      }
+    }
 
     // AI 응답 저장
     await saveMessage(convId, 'assistant', aiResponse);

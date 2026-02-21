@@ -7,14 +7,16 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 // 채팅 메시지 전송
 export async function sendMessage(
   message: string,
-  conversationId?: string
+  conversationId?: string,
+  model?: string,
+  extendedThinking?: boolean
 ): Promise<ChatResponse> {
   const response = await fetch(`${API_URL}/api/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ message, conversationId }),
+    body: JSON.stringify({ message, conversationId, model, extendedThinking }),
   });
 
   if (!response.ok) {
