@@ -230,8 +230,16 @@ ${memoryContext}
       conversationId: convId,
       memories
     });
-  } catch (error) {
-    console.error('채팅 에러:', error);
-    return res.status(500).json({ error: '채팅 처리 중 에러가 발생했어요' });
+  } catch (error: any) {
+    console.error('❌ 채팅 에러 상세:', {
+      message: error?.message,
+      name: error?.name,
+      status: error?.status,
+      stack: error?.stack?.slice(0, 500)
+    });
+    return res.status(500).json({ 
+      error: '채팅 처리 중 에러가 발생했어요',
+      details: error?.message || 'Unknown error'
+    });
   }
 }

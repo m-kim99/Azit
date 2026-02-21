@@ -1,7 +1,7 @@
 // 채팅 인터페이스 컴포넌트
 import { useState, useRef, useEffect } from 'react';
 import type { Message as MessageType, Memory } from '../types';
-import { sendMessage, getMemories } from '../api/chat';
+import { sendMessage, getMemories, getConversations } from '../api/chat';
 import Message from './Message';
 import Sidebar from './Sidebar';
 import SettingsModal from './SettingsModal';
@@ -53,8 +53,23 @@ export default function ChatUI() {
     }
   };
 
+  // 대화 목록 로드
+  const loadConversations = async () => {
+    try {
+      const data = await getConversations();
+      setSessions(data.map((conv) => ({
+        id: conv.id,
+        title: conv.title || '새 대화',
+        created_at: conv.created_at,
+      })));
+    } catch (error) {
+      console.error('대화 목록 로드 실패:', error);
+    }
+  };
+
   useEffect(() => {
     loadMemories();
+    loadConversations();
   }, []);
 
   // 자동 스크롤
@@ -64,19 +79,10 @@ export default function ChatUI() {
 
   // 새 채팅 시작
   const handleNewChat = () => {
-    // 현재 대화가 있으면 세션 목록에 추가
-    if (conversationId && messages.length > 0) {
-      const newSession: Session = {
-        id: conversationId,
-        title: currentSessionTitle,
-        created_at: new Date().toISOString(),
-      };
-      setSessions((prev) => [newSession, ...prev]);
-    }
-    
     setMessages([]);
     setConversationId(undefined);
     setCurrentSessionTitle('새 대화');
+    setIsSidebarOpen(false);
   };
 
   // 세션 선택 (현재는 UI만 - 실제 로드 기능은 추후 구현)
@@ -132,6 +138,11 @@ export default function ChatUI() {
       // 메모리 업데이트
       if (response.memories) {
         setMemories(response.memories);
+      }
+
+      // 대화 목록 새로고침 (새 대화가 생성된 경우)
+      if (!conversationId) {
+        loadConversations();
       }
     } catch (error) {
       console.error('메시지 전송 실패:', error);

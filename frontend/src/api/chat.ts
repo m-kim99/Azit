@@ -67,3 +67,20 @@ export async function deleteMemory(id: string): Promise<void> {
     throw new Error('메모리 삭제 실패');
   }
 }
+
+// 대화 목록 가져오기
+export interface Conversation {
+  id: string;
+  title: string;
+  created_at: string;
+}
+
+export async function getConversations(): Promise<Conversation[]> {
+  const response = await fetch(`${API_URL}/api/conversations`);
+
+  if (!response.ok) {
+    throw new Error('대화 목록 조회 실패');
+  }
+
+  return response.json();
+}
