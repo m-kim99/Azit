@@ -47,9 +47,15 @@ export default function Sidebar({
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-      {/* 상단 로고 */}
-      <div className="p-4 border-b border-[#e8e0d8]">
+      {/* 상단 로고 + 모바일 닫기 버튼 */}
+      <div className="p-4 border-b border-[#e8e0d8] flex items-center justify-between">
         <h1 className="text-lg font-semibold text-[#8b7355]">OurHome_Azit</h1>
+        <button
+          onClick={onClose}
+          className="p-1 text-[#7a6a5a] hover:bg-[#efe8e0] rounded-lg md:hidden"
+        >
+          ✕
+        </button>
       </div>
 
       {/* 새 채팅 버튼 */}
