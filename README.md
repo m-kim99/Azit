@@ -1,11 +1,15 @@
 # 우리집 (Our Home) - AI Chat Application
 
-Supabase를 활용한 간단한 AI 채팅 애플리케이션입니다.
+Supabase + Vercel을 활용한 AI 채팅 애플리케이션입니다.
 
-## 🏗 프로젝트 구조
+## 🏗 프로젝트 구조 (Vercel 배포용)
 
 ```
 /
+├── api/               # Vercel Serverless Functions
+│   ├── chat.ts        # POST /api/chat
+│   └── memories.ts    # GET/POST/DELETE /api/memories
+│
 ├── frontend/          # React + TypeScript + Vite
 │   ├── src/
 │   │   ├── App.tsx
@@ -19,19 +23,10 @@ Supabase를 활용한 간단한 AI 채팅 애플리케이션입니다.
 │   │       └── index.ts
 │   └── ...
 │
-├── backend/           # Node.js + Express + TypeScript
-│   ├── src/
-│   │   ├── index.ts
-│   │   ├── routes/
-│   │   │   └── chat.ts
-│   │   ├── services/
-│   │   │   ├── claude.ts
-│   │   │   ├── supabase.ts
-│   │   │   └── memory.ts
-│   │   └── types/
-│   │       └── index.ts
-│   └── ...
+├── backend/           # (로컬 개발용 - Vercel 배포시 미사용)
 │
+├── vercel.json        # Vercel 설정
+├── package.json       # 루트 의존성
 └── README.md
 ```
 
@@ -73,49 +68,44 @@ INSERT INTO memories (category, content) VALUES
   ('fact', '사용자에 대한 사실');
 ```
 
-### 2. 환경 변수 설정
+### 2. Vercel 배포
 
-**Backend (`backend/.env`):**
-```bash
+**Vercel 환경 변수 설정 (Vercel Dashboard > Settings > Environment Variables):**
+```
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-anon-key-here
-PORT=3001
-CORS_ORIGIN=http://localhost:5173
 ```
 
-**Frontend (`frontend/.env`):**
+**배포:**
+```bash
+# Vercel CLI로 배포
+npx vercel
+
+# 또는 GitHub 연동 후 자동 배포
+```
+
+### 3. 로컬 개발 (선택)
+
+```bash
+# 루트에서 의존성 설치
+npm install
+
+# Frontend 의존성 설치 및 실행
+cd frontend
+npm install
+npm run dev
+
+# (선택) Backend 로컬 테스트
+cd backend
+npm install
+npm run dev
+```
+
+**로컬 개발시 Frontend `.env`:**
 ```bash
 VITE_API_URL=http://localhost:3001
 ```
-
-### 3. 패키지 설치
-
-```bash
-# Backend
-cd backend
-npm install
-
-# Frontend
-cd ../frontend
-npm install
-```
-
-### 4. 실행
-
-**Backend:**
-```bash
-cd backend
-npm run dev
-```
-
-**Frontend (새 터미널에서):**
-```bash
-cd frontend
-npm run dev
-```
-
-브라우저에서 `http://localhost:5173` 접속!
 
 ## 📚 API 엔드포인트
 

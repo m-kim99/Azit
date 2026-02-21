@@ -1,7 +1,8 @@
 // API 호출 함수들
 import type { ChatResponse, Memory } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Vercel 배포시 상대 경로 사용, 로컬 개발시 localhost:3001
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 // 채팅 메시지 전송
 export async function sendMessage(
@@ -56,7 +57,7 @@ export async function addMemory(
 
 // 메모리 삭제
 export async function deleteMemory(id: string): Promise<void> {
-  const response = await fetch(`${API_URL}/api/memories/${id}`, {
+  const response = await fetch(`${API_URL}/api/memories?id=${id}`, {
     method: 'DELETE',
   });
 
