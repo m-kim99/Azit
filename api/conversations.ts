@@ -33,8 +33,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .limit(50);
 
       if (error) {
-        console.error('대화 목록 조회 에러:', error);
-        return res.status(500).json({ error: '대화 목록 조회 실패' });
+        console.error('❌ 대화 목록 조회 에러:', JSON.stringify(error));
+        return res.status(500).json({ error: '대화 목록 조회 실패', details: error.message, code: error.code });
       }
 
       return res.status(200).json(data || []);
@@ -56,8 +56,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .single();
 
       if (error) {
-        console.error('대화 생성 에러:', error);
-        return res.status(500).json({ error: '대화 생성 실패' });
+        console.error('❌ 대화 생성 에러:', JSON.stringify(error));
+        return res.status(500).json({ error: '대화 생성 실패', details: error.message, code: error.code });
       }
 
       return res.status(201).json(data);
