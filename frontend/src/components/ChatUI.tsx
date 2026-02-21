@@ -29,6 +29,7 @@ export default function ChatUI() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSessionTitle, setCurrentSessionTitle] = useState('새 대화');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [modelConfig, setModelConfig] = useState<ModelConfig>(() => {
     // localStorage에서 저장된 설정 불러오기
     const saved = localStorage.getItem('modelConfig');
@@ -155,13 +156,24 @@ export default function ChatUI() {
         onNewChat={handleNewChat}
         onSelectSession={handleSelectSession}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
       {/* 메인 채팅 영역 */}
       <div className="flex-1 flex flex-col">
         {/* 상단 헤더 - 현재 세션 이름 + 모델 선택 */}
-        <header className="h-14 border-b border-gray-200 flex items-center justify-between px-6">
-          <h2 className="text-sm font-medium text-gray-700">{currentSessionTitle}</h2>
+        <header className="h-14 border-b border-gray-200 flex items-center justify-between px-4 md:px-6">
+          <div className="flex items-center gap-3">
+            {/* 모바일 사이드바 토글 버튼 */}
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg md:hidden"
+            >
+              ☰
+            </button>
+            <h2 className="text-sm font-medium text-gray-700">{currentSessionTitle}</h2>
+          </div>
           <ModelSelector value={modelConfig} onChange={handleModelConfigChange} />
         </header>
 

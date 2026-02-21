@@ -13,6 +13,8 @@ interface SidebarProps {
   onNewChat: () => void;
   onSelectSession: (id: string) => void;
   onOpenSettings: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export default function Sidebar({
@@ -21,6 +23,8 @@ export default function Sidebar({
   onNewChat,
   onSelectSession,
   onOpenSettings,
+  isOpen,
+  onClose,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -29,7 +33,20 @@ export default function Sidebar({
   );
 
   return (
-    <aside className="w-64 bg-[#f9f5f1] h-screen flex flex-col border-r border-[#e8e0d8]">
+    <>
+      {/* 모바일 오버레이 */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      <aside className={`
+        fixed md:relative z-50 w-64 bg-[#f9f5f1] h-screen flex flex-col border-r border-[#e8e0d8]
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
       {/* 상단 로고 */}
       <div className="p-4 border-b border-[#e8e0d8]">
         <h1 className="text-lg font-semibold text-[#8b7355]">OurHome_Azit</h1>
@@ -106,6 +123,7 @@ export default function Sidebar({
           </button>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

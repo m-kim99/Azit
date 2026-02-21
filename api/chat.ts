@@ -3,19 +3,24 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase 클라이언트
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_KEY!
-);
+// 환경 변수 체크
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
-// Claude 클라이언트
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!
-});
+// Supabase 클라이언트 (환경 변수가 있을 때만 생성)
+const supabase = SUPABASE_URL && SUPABASE_KEY 
+  ? createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
+
+// Claude 클라이언트 (환경 변수가 있을 때만 생성)
+const anthropic = ANTHROPIC_API_KEY 
+  ? new Anthropic({ apiKey: ANTHROPIC_API_KEY })
+  : null;
 
 // 메모리 가져오기
 async function getMemories() {
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from('memories')
     .select('*')
@@ -59,6 +64,7 @@ function formatMemoriesForPrompt(memories: any[]): string {
 
 // 대화 생성
 async function createConversation(title?: string): Promise<string | null> {
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from('conversations')
     .insert({ title: title || '새 대화' })
@@ -74,6 +80,7 @@ async function createConversation(title?: string): Promise<string | null> {
 
 // 대화 히스토리 가져오기
 async function getConversationHistory(conversationId: string) {
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from('messages')
     .select('*')
@@ -89,6 +96,7 @@ async function getConversationHistory(conversationId: string) {
 
 // 메시지 저장
 async function saveMessage(conversationId: string, role: string, content: string) {
+  if (!supabase) return;
   const { error } = await supabase
     .from('messages')
     .insert({ conversation_id: conversationId, role, content });
@@ -110,6 +118,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // 환경 변수 체크
+  if (!supabase) {
+    console.error('Missing SUPABASE_URL or SUPABASE_KEY');
+    return res.status(500).json({ error: 'Supabase 설정이 필요해요 (SUPABASE_URL, SUPABASE_KEY)' });
+  }
+  if (!anthropic) {
+    console.error('Missing ANTHROPIC_API_KEY');
+    return res.status(500).json({ error: 'Anthropic API 키가 필요해요 (ANTHROPIC_API_KEY)' });
   }
 
   try {
