@@ -1,7 +1,7 @@
 // 채팅 인터페이스 컴포넌트
 import { useState, useRef, useEffect } from 'react';
 import type { Message as MessageType, Memory } from '../types';
-import { sendMessage, getMemories, getConversations } from '../api/chat';
+import { sendMessage, getMemories, getConversations, createConversation } from '../api/chat';
 import Message from './Message';
 import Sidebar from './Sidebar';
 import SettingsModal from './SettingsModal';
@@ -78,11 +78,27 @@ export default function ChatUI() {
   }, [messages]);
 
   // 새 채팅 시작
-  const handleNewChat = () => {
-    setMessages([]);
-    setConversationId(undefined);
-    setCurrentSessionTitle('새 대화');
-    setIsSidebarOpen(false);
+  const handleNewChat = async () => {
+    try {
+      // DB에 새 conversation 생성
+      const newConv = await createConversation();
+      
+      // 상태 업데이트
+      setMessages([]);
+      setConversationId(newConv.id);
+      setCurrentSessionTitle(newConv.title || '새 대화');
+      setIsSidebarOpen(false);
+      
+      // 사이드바 새로고침
+      await loadConversations();
+    } catch (error) {
+      console.error('새 대화 생성 실패:', error);
+      // 실패해도 UI는 리셋
+      setMessages([]);
+      setConversationId(undefined);
+      setCurrentSessionTitle('새 대화');
+      setIsSidebarOpen(false);
+    }
   };
 
   // 세션 선택 (현재는 UI만 - 실제 로드 기능은 추후 구현)

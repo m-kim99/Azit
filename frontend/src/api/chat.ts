@@ -84,3 +84,20 @@ export async function getConversations(): Promise<Conversation[]> {
 
   return response.json();
 }
+
+// 새 대화 생성
+export async function createConversation(title?: string): Promise<Conversation> {
+  const response = await fetch(`${API_URL}/api/conversations`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ title: title || '새 대화' }),
+  });
+
+  if (!response.ok) {
+    throw new Error('대화 생성 실패');
+  }
+
+  return response.json();
+}

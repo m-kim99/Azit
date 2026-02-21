@@ -12,7 +12,7 @@ const supabase = SUPABASE_URL && SUPABASE_KEY
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS 헤더
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -40,6 +40,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json(data || []);
     } catch (error: any) {
       console.error('대화 목록 에러:', error);
+      return res.status(500).json({ error: error?.message || '에러 발생' });
+    }
+  }
+
+  // POST: 새 대화 생성
+  if (req.method === 'POST') {
+    try {
+      const { title } = req.body || {};
+      
+      const { data, error } = await supabase
+        .from('conversations')
+        .insert({ title: title || '새 대화' })
+        .select('id, title, created_at')
+        .single();
+
+      if (error) {
+        console.error('대화 생성 에러:', error);
+        return res.status(500).json({ error: '대화 생성 실패' });
+      }
+
+      return res.status(201).json(data);
+    } catch (error: any) {
+      console.error('대화 생성 에러:', error);
       return res.status(500).json({ error: error?.message || '에러 발생' });
     }
   }
