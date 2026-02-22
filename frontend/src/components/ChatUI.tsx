@@ -44,12 +44,16 @@ export default function ChatUI() {
   };
 
   // 메모리 로드
+  const [memoryError, setMemoryError] = useState<string | null>(null);
   const loadMemories = async () => {
     try {
+      setMemoryError(null);
       const data = await getMemories();
       setMemories(data);
-    } catch (error) {
-      console.error('메모리 로드 실패:', error);
+    } catch (error: any) {
+      const msg = error?.message || '메모리 로드 실패';
+      console.error('메모리 로드 실패:', msg);
+      setMemoryError(msg);
     }
   };
 
@@ -203,6 +207,14 @@ export default function ChatUI() {
           </div>
           <ModelSelector value={modelConfig} onChange={handleModelConfigChange} />
         </header>
+
+        {/* 에러 배너 */}
+        {memoryError && (
+          <div className="bg-red-50 border-b border-red-200 px-4 py-2 text-sm text-red-700 flex items-center justify-between">
+            <span>⚠️ 메모리 로드 실패: {memoryError}</span>
+            <button onClick={loadMemories} className="text-red-600 hover:text-red-800 underline text-xs">재시도</button>
+          </div>
+        )}
 
         {/* 메시지 영역 */}
         <main className="flex-1 overflow-y-auto">

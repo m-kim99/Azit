@@ -26,16 +26,20 @@ const anthropic = ANTHROPIC_API_KEY
 
 // 메모리 가져오기
 async function getMemories() {
-  if (!supabase) return [];
+  if (!supabase) {
+    console.error('❌ getMemories: supabase 클라이언트가 null');
+    throw new Error('Supabase 클라이언트가 초기화되지 않았어요');
+  }
   const { data, error } = await supabase
     .from('memories')
     .select('*')
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('메모리 조회 에러:', error);
-    return [];
+    console.error('❌ 메모리 조회 에러:', JSON.stringify(error));
+    throw new Error(`메모리 조회 실패: ${error.message}`);
   }
+  console.log(`✅ 메모리 ${data?.length || 0}개 로드`);
   return data || [];
 }
 
@@ -53,16 +57,18 @@ function formatMemoriesForPrompt(memories: any[]): string {
     grouped[category].push(memory.content);
   }
 
+  const categoryLabels: { [key: string]: string } = {
+    critical: '⚠️ 중요',
+    preference: '💜 선호',
+    fact: '📝 사실',
+    etc: '📌 기타',
+  };
+
   let result = '';
   
-  if (grouped['critical']) {
-    result += '⚠️ 중요:\n' + grouped['critical'].map((m: string) => `- ${m}`).join('\n') + '\n\n';
-  }
-  if (grouped['preference']) {
-    result += '💜 선호:\n' + grouped['preference'].map((m: string) => `- ${m}`).join('\n') + '\n\n';
-  }
-  if (grouped['fact']) {
-    result += '📝 사실:\n' + grouped['fact'].map((m: string) => `- ${m}`).join('\n') + '\n\n';
+  for (const [category, items] of Object.entries(grouped)) {
+    const label = categoryLabels[category] || `📎 ${category}`;
+    result += `${label}:\n` + items.map((m: string) => `- ${m}`).join('\n') + '\n\n';
   }
 
   return result.trim();
@@ -157,9 +163,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       convId = newId;
     }
 
-    // 메모리 로드
-    const memories = await getMemories();
-    const memoryContext = formatMemoriesForPrompt(memories);
+    // 메모리 로드 (실패해도 채팅은 계속 진행)
+    let memories: any[] = [];
+    let memoryContext = '메모리 로드 실패 - 저장된 정보 없이 대화합니다.';
+    try {
+      memories = await getMemories();
+      memoryContext = formatMemoriesForPrompt(memories);
+    } catch (memError: any) {
+      console.error('⚠️ 메모리 로드 실패, 채팅은 계속 진행:', memError?.message);
+    }
 
     // 대화 히스토리 가져오기
     const history = await getConversationHistory(convId);

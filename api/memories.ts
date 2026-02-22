@@ -2,11 +2,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase 클라이언트
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_KEY!
-);
+// Supabase 클라이언트 (환경 변수가 있을 때만 생성)
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const supabase = SUPABASE_URL && SUPABASE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS 헤더
@@ -16,6 +17,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // supabase null 체크
+  if (!supabase) {
+    console.error('❌ memories API: SUPABASE_URL 또는 SUPABASE_KEY 없음');
+    return res.status(500).json({ 
+      error: 'Supabase 설정이 필요해요 (SUPABASE_URL, SUPABASE_KEY)',
+      env: {
+        SUPABASE_URL: SUPABASE_URL ? '있음' : '없음',
+        SUPABASE_KEY: SUPABASE_KEY ? '있음' : '없음',
+      }
+    });
   }
 
   try {
